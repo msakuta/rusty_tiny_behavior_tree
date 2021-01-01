@@ -1,8 +1,7 @@
 use rusty_tiny_behavior_tree::{
-    BehaviorNodeBase, BehaviorResult, FallbackNodeRef, SequenceNode, SequenceNodeRef,
+    BehaviorNodeBase, BehaviorResult, FallbackNodeRef, SequenceNodeRef,
 };
 use std::cell::RefCell;
-use std::convert::From;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 struct Door {

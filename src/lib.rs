@@ -10,7 +10,6 @@ pub enum BehaviorResult<R, F> {
 
 pub trait BehaviorNodeBase<Payload, R, F> {
     fn tick(&mut self, payload: Payload) -> BehaviorResult<R, F>;
-    fn set_parent(&mut self, parent: &dyn BehaviorNodeBase<Payload, R, F>) {}
 }
 
 pub struct SequenceNode<Payload, R, F, MR> {
