@@ -8,11 +8,9 @@ pub enum BehaviorResult<R, F> {
     FAILURE(F),
 }
 
-
-pub trait BehaviorNodeBase<Payload, R, F>{
+pub trait BehaviorNodeBase<Payload, R, F> {
     fn tick(&mut self, payload: Payload) -> BehaviorResult<R, F>;
-    fn set_parent(&mut self, parent: &dyn BehaviorNodeBase<Payload, R, F>){
-    }
+    fn set_parent(&mut self, parent: &dyn BehaviorNodeBase<Payload, R, F>) {}
 }
 
 pub struct SequenceNode<Payload, R, F, MR> {
@@ -22,20 +20,26 @@ pub struct SequenceNode<Payload, R, F, MR> {
 
 impl<Payload, R, F, MR> SequenceNode<Payload, R, F, MR> {
     pub fn new<T>(children: T, merge_result: MR) -> Self
-        where T: Into<Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>>
+    where
+        T: Into<Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>>,
     {
-        Self{ children: children.into(), merge_result }
+        Self {
+            children: children.into(),
+            merge_result,
+        }
     }
 }
 
 impl<Payload, R, F, MR> BehaviorNodeBase<Payload, R, F> for SequenceNode<Payload, R, F, MR>
-    where R: Default, Payload: Copy + Clone,
-        MR: Fn(&mut R, R),
+where
+    R: Default,
+    Payload: Clone,
+    MR: Fn(&mut R, R),
 {
     fn tick(&mut self, payload: Payload) -> BehaviorResult<R, F> {
         let mut last_success = R::default();
         for node in &mut self.children {
-            match node.tick(payload) {
+            match node.tick(payload.clone()) {
                 BehaviorResult::SUCCESS(r) => (self.merge_result)(&mut last_success, r),
                 BehaviorResult::FAILURE(f) => return BehaviorResult::FAILURE(f),
                 _ => (),
@@ -45,19 +49,32 @@ impl<Payload, R, F, MR> BehaviorNodeBase<Payload, R, F> for SequenceNode<Payload
     }
 }
 
-pub struct FallbackNode<Payload, R, F> {
+pub struct FallbackNode<Payload, R, F, MR> {
     children: Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>,
+    merge_result: MR,
 }
 
-impl<Payload, R, F> BehaviorNodeBase<Payload, R, F> for FallbackNode<Payload, R, F>
-    where F: Default, Payload: Copy + Clone
+impl<Payload, R, F, MR> FallbackNode<Payload, R, F, MR> {
+    pub fn new(children: Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>, merge_result: MR) -> Self {
+        Self {
+            children,
+            merge_result,
+        }
+    }
+}
+
+impl<Payload, R, F, MR> BehaviorNodeBase<Payload, R, F> for FallbackNode<Payload, R, F, MR>
+where
+    F: Default,
+    Payload: Clone,
+    MR: Fn(&mut F, F),
 {
     fn tick(&mut self, payload: Payload) -> BehaviorResult<R, F> {
         let mut last_failure = F::default();
         for node in &mut self.children {
-            match node.tick(payload) {
+            match node.tick(payload.clone()) {
                 BehaviorResult::SUCCESS(r) => return BehaviorResult::SUCCESS(r),
-                BehaviorResult::FAILURE(f) => last_failure = f,
+                BehaviorResult::FAILURE(f) => (self.merge_result)(&mut last_failure, f),
                 _ => (),
             }
         }

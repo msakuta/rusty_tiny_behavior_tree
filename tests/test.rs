@@ -34,9 +34,13 @@ struct BodyArmsNode<'a> {
 impl<'a> BehaviorNodeBase<&'a Body, Vec<String>, ()> for BodyArmsNode<'a> {
     fn tick(&mut self, body: &'a Body) -> BResult {
         let mut result = vec![];
-        let mut join_result = |node: &mut Box<dyn BehaviorNodeBase<&'a Arm, Vec<String>, ()>>, arm: &'a Arm| {
+        let mut join_result = |node: &mut Box<dyn BehaviorNodeBase<&'a Arm, Vec<String>, ()>>,
+                               arm: &'a Arm| {
             match node.tick(arm) {
-                BehaviorResult::SUCCESS(mut s) => {result.append(&mut s); None},
+                BehaviorResult::SUCCESS(mut s) => {
+                    result.append(&mut s);
+                    None
+                }
                 BehaviorResult::FAILURE(f) => return Some(f),
                 _ => None,
             }
@@ -51,51 +55,65 @@ impl<'a> BehaviorNodeBase<&'a Body, Vec<String>, ()> for BodyArmsNode<'a> {
     }
 }
 
-struct PeelLeftArmNode<T>{
+struct PeelLeftArmNode<T> {
     node: T,
 }
 
-impl<'a, T: BehaviorNodeBase<&'a Arm, Vec<String>, ()>>
-BehaviorNodeBase<&'a Body, Vec<String>, ()> for PeelLeftArmNode<T>
+impl<'a, T: BehaviorNodeBase<&'a Arm, Vec<String>, ()>> BehaviorNodeBase<&'a Body, Vec<String>, ()>
+    for PeelLeftArmNode<T>
 {
     fn tick(&mut self, body: &'a Body) -> BResult {
         self.node.tick(&body.left_arm)
     }
 }
 
-struct PeelRightArmNode<T>{
+struct PeelRightArmNode<T> {
     node: T,
 }
 
-impl<'a, T: BehaviorNodeBase<&'a Arm, Vec<String>, ()>>
-BehaviorNodeBase<&'a Body, Vec<String>, ()> for PeelRightArmNode<T>
+impl<'a, T: BehaviorNodeBase<&'a Arm, Vec<String>, ()>> BehaviorNodeBase<&'a Body, Vec<String>, ()>
+    for PeelRightArmNode<T>
 {
     fn tick(&mut self, body: &'a Body) -> BResult {
         self.node.tick(&body.right_arm)
     }
 }
 
-
 #[test]
 fn test_arm() -> Result<(), ()> {
-    let body = Body{
-        left_arm: Arm{name: "leftArm".to_string()},
-        right_arm: Arm{name: "rightArm".to_string()},
+    let body = Body {
+        left_arm: Arm {
+            name: "leftArm".to_string(),
+        },
+        right_arm: Arm {
+            name: "rightArm".to_string(),
+        },
     };
 
-    let mut tree = BodyArmsNode{
-        left_arm_node: Box::<dyn BehaviorNodeBase<&Arm, Vec<String>, ()>>::from(Box::new( PrintArmNode )),
-        right_arm_node: Box::<dyn BehaviorNodeBase<&Arm, Vec<String>, ()>>::from(Box::new( PrintArmNode )),
+    let mut tree = BodyArmsNode {
+        left_arm_node: Box::<dyn BehaviorNodeBase<&Arm, Vec<String>, ()>>::from(Box::new(
+            PrintArmNode,
+        )),
+        right_arm_node: Box::<dyn BehaviorNodeBase<&Arm, Vec<String>, ()>>::from(Box::new(
+            PrintArmNode,
+        )),
     };
-    assert_eq!(tree.tick(&body), BehaviorResult::SUCCESS(vec!["leftArm".to_owned(), "rightArm".to_owned()]));
+    assert_eq!(
+        tree.tick(&body),
+        BehaviorResult::SUCCESS(vec!["leftArm".to_owned(), "rightArm".to_owned()])
+    );
     Ok(())
 }
 
 #[test]
-fn test_arm_peel(){
-    let body = Body{
-        left_arm: Arm{name: "leftArm".to_string()},
-        right_arm: Arm{name: "rightArm".to_string()},
+fn test_arm_peel() {
+    let body = Body {
+        left_arm: Arm {
+            name: "leftArm".to_string(),
+        },
+        right_arm: Arm {
+            name: "rightArm".to_string(),
+        },
     };
 
     // fn map_b<'a, T>(node: T) -> Box<dyn BehaviorNodeBase<&'a Body, Vec<String>, ()>>
@@ -104,9 +122,21 @@ fn test_arm_peel(){
     //     Box::new(node)
     // }
 
-    let mut tree = SequenceNode::<&Body, Vec<String>, (), _>::new(vec![
-        Box::<dyn BehaviorNodeBase<&Body, Vec<String>, ()>>::from(Box::new(PeelLeftArmNode{ node: PrintArmNode })),
-        Box::<dyn BehaviorNodeBase<&Body, Vec<String>, ()>>::from(Box::new(PeelRightArmNode{ node: PrintArmNode }))
-    ], |last_success: &mut Vec<String>, mut this_success: Vec<String>| last_success.append(&mut this_success));
-    assert_eq!(tree.tick(&body), BehaviorResult::SUCCESS(vec!["leftArm".to_owned(), "rightArm".to_owned()]));
+    let mut tree = SequenceNode::<&Body, Vec<String>, (), _>::new(
+        vec![
+            Box::<dyn BehaviorNodeBase<&Body, Vec<String>, ()>>::from(Box::new(PeelLeftArmNode {
+                node: PrintArmNode,
+            })),
+            Box::<dyn BehaviorNodeBase<&Body, Vec<String>, ()>>::from(Box::new(PeelRightArmNode {
+                node: PrintArmNode,
+            })),
+        ],
+        |last_success: &mut Vec<String>, mut this_success: Vec<String>| {
+            last_success.append(&mut this_success)
+        },
+    );
+    assert_eq!(
+        tree.tick(&body),
+        BehaviorResult::SUCCESS(vec!["leftArm".to_owned(), "rightArm".to_owned()])
+    );
 }
