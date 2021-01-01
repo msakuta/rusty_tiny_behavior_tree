@@ -49,9 +49,9 @@ impl<'a> BehaviorNodeBase<RCDoor<'a>, (), ()> for IsDoorOpen {
         let door = door.borrow_mut();
         eprintln!("The door is {}", if door.open { "open" } else { "closed" });
         if door.open {
-            BehaviorResult::SUCCESS(())
+            BehaviorResult::Success(())
         } else {
-            BehaviorResult::FAILURE(())
+            BehaviorResult::Failure(())
         }
     }
 }
@@ -60,9 +60,9 @@ impl BehaviorNodeBase<&mut Door, (), ()> for IsDoorOpen {
     fn tick(&mut self, door: &mut Door) -> BehaviorResult<(), ()> {
         eprintln!("The door is {}", if door.open { "open" } else { "closed" });
         if door.open {
-            BehaviorResult::SUCCESS(())
+            BehaviorResult::Success(())
         } else {
-            BehaviorResult::FAILURE(())
+            BehaviorResult::Failure(())
         }
     }
 }
@@ -75,10 +75,10 @@ impl<'a> BehaviorNodeBase<RCDoor<'a>, (), ()> for OpenDoor {
         if !door.locked {
             door.open = true;
             eprintln!("Door opened!");
-            BehaviorResult::SUCCESS(())
+            BehaviorResult::Success(())
         } else {
             eprintln!("Door was unable to open because it's locked!");
-            BehaviorResult::FAILURE(())
+            BehaviorResult::Failure(())
         }
     }
 }
@@ -88,9 +88,9 @@ struct HaveKey;
 impl<'a> BehaviorNodeBase<RCAgent<'a>, (), ()> for HaveKey {
     fn tick(&mut self, agent: RCAgent<'a>) -> BehaviorResult<(), ()> {
         if agent.borrow().has_key {
-            BehaviorResult::SUCCESS(())
+            BehaviorResult::Success(())
         } else {
-            BehaviorResult::FAILURE(())
+            BehaviorResult::Failure(())
         }
     }
 }
@@ -102,7 +102,7 @@ impl<'a> BehaviorNodeBase<RCDoor<'a>, (), ()> for UnlockDoor {
         let mut door = door.borrow_mut();
         door.locked = false;
         eprintln!("Door unlocked!");
-        BehaviorResult::SUCCESS(())
+        BehaviorResult::Success(())
     }
 }
 
@@ -151,7 +151,7 @@ fn test_unlocked_door() {
 
     let mut tree = build_tree();
 
-    assert_eq!(tree.tick(&state), BehaviorResult::SUCCESS(()));
+    assert_eq!(tree.tick(&state), BehaviorResult::Success(()));
 
     assert_eq!(
         *state.door.borrow(),
@@ -176,7 +176,7 @@ fn test_unlock_door() {
 
     let mut tree = build_tree();
 
-    assert_eq!(tree.tick(&state), BehaviorResult::SUCCESS(()));
+    assert_eq!(tree.tick(&state), BehaviorResult::Success(()));
 
     assert_eq!(
         *state.door.borrow(),
@@ -201,7 +201,7 @@ fn test_unlock_door_fail() {
 
     let mut tree = build_tree();
 
-    assert_eq!(tree.tick(&state), BehaviorResult::FAILURE(()));
+    assert_eq!(tree.tick(&state), BehaviorResult::Failure(()));
 
     assert_eq!(
         *state.door.borrow(),

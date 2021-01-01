@@ -17,9 +17,9 @@ impl<'a> BehaviorNodeBase<RCDoor<'a>, (), ()> for IsDoorOpen {
         let door = door.borrow_mut();
         eprintln!("The door is {}", if door.open { "open" } else { "closed" });
         if door.open {
-            BehaviorResult::SUCCESS(())
+            BehaviorResult::Success(())
         } else {
-            BehaviorResult::FAILURE(())
+            BehaviorResult::Failure(())
         }
     }
 }
@@ -28,9 +28,9 @@ impl BehaviorNodeBase<&mut Door, (), ()> for IsDoorOpen {
     fn tick(&mut self, door: &mut Door) -> BehaviorResult<(), ()> {
         eprintln!("The door is {}", if door.open { "open" } else { "closed" });
         if door.open {
-            BehaviorResult::SUCCESS(())
+            BehaviorResult::Success(())
         } else {
-            BehaviorResult::FAILURE(())
+            BehaviorResult::Failure(())
         }
     }
 }
@@ -43,10 +43,10 @@ impl<'a> BehaviorNodeBase<RCDoor<'a>, (), ()> for OpenDoor {
         if !door.locked {
             door.open = true;
             eprintln!("Door opened!");
-            BehaviorResult::SUCCESS(())
+            BehaviorResult::Success(())
         } else {
             eprintln!("Door was unable to open because it's locked!");
-            BehaviorResult::FAILURE(())
+            BehaviorResult::Failure(())
         }
     }
 }
@@ -66,7 +66,7 @@ fn test_opened_door() {
         |_: &mut (), _: ()| (),
     );
 
-    assert_eq!(tree.tick(&door), BehaviorResult::SUCCESS(()));
+    assert_eq!(tree.tick(&door), BehaviorResult::Success(()));
 
     assert_eq!(
         *door.borrow(),
@@ -92,7 +92,7 @@ fn test_open_door() {
         |_: &mut (), _: ()| (),
     );
 
-    assert_eq!(tree.tick(&door), BehaviorResult::SUCCESS(()));
+    assert_eq!(tree.tick(&door), BehaviorResult::Success(()));
 
     assert_eq!(
         *door.borrow(),
@@ -118,7 +118,7 @@ fn test_open_door_fail() {
         |_: &mut (), _: ()| (),
     );
 
-    assert_eq!(tree.tick(&door), BehaviorResult::FAILURE(()));
+    assert_eq!(tree.tick(&door), BehaviorResult::Failure(()));
 
     assert_eq!(
         *door.borrow(),

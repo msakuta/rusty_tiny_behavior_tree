@@ -2,10 +2,10 @@ use std::cmp::PartialEq;
 
 #[derive(PartialEq, Debug)]
 pub enum BehaviorResult<R, F> {
-    IDLE,
-    RUNNING,
-    SUCCESS(R),
-    FAILURE(F),
+    Idle,
+    Running,
+    Success(R),
+    Failure(F),
 }
 
 pub trait BehaviorNodeBase<Payload, R, F> {
@@ -39,12 +39,12 @@ where
         let mut last_success = R::default();
         for node in &mut self.children {
             match node.tick(payload.clone()) {
-                BehaviorResult::SUCCESS(r) => (self.merge_result)(&mut last_success, r),
-                BehaviorResult::FAILURE(f) => return BehaviorResult::FAILURE(f),
+                BehaviorResult::Success(r) => (self.merge_result)(&mut last_success, r),
+                BehaviorResult::Failure(f) => return BehaviorResult::Failure(f),
                 _ => (),
             }
         }
-        BehaviorResult::SUCCESS(last_success)
+        BehaviorResult::Success(last_success)
     }
 }
 
@@ -75,12 +75,12 @@ where
         let mut last_success = R::default();
         for node in &mut self.children {
             match node.tick(payload) {
-                BehaviorResult::SUCCESS(r) => (self.merge_result)(&mut last_success, r),
-                BehaviorResult::FAILURE(f) => return BehaviorResult::FAILURE(f),
+                BehaviorResult::Success(r) => (self.merge_result)(&mut last_success, r),
+                BehaviorResult::Failure(f) => return BehaviorResult::Failure(f),
                 _ => (),
             }
         }
-        BehaviorResult::SUCCESS(last_success)
+        BehaviorResult::Success(last_success)
     }
 }
 
@@ -111,12 +111,12 @@ where
         let mut last_failure = F::default();
         for node in &mut self.children {
             match node.tick(payload.clone()) {
-                BehaviorResult::SUCCESS(r) => return BehaviorResult::SUCCESS(r),
-                BehaviorResult::FAILURE(f) => (self.merge_result)(&mut last_failure, f),
+                BehaviorResult::Success(r) => return BehaviorResult::Success(r),
+                BehaviorResult::Failure(f) => (self.merge_result)(&mut last_failure, f),
                 _ => (),
             }
         }
-        BehaviorResult::FAILURE(last_failure)
+        BehaviorResult::Failure(last_failure)
     }
 }
 
@@ -147,11 +147,11 @@ where
         let mut last_failure = F::default();
         for node in &mut self.children {
             match node.tick(payload) {
-                BehaviorResult::SUCCESS(r) => return BehaviorResult::SUCCESS(r),
-                BehaviorResult::FAILURE(f) => (self.merge_result)(&mut last_failure, f),
+                BehaviorResult::Success(r) => return BehaviorResult::Success(r),
+                BehaviorResult::Failure(f) => (self.merge_result)(&mut last_failure, f),
                 _ => (),
             }
         }
-        BehaviorResult::FAILURE(last_failure)
+        BehaviorResult::Failure(last_failure)
     }
 }

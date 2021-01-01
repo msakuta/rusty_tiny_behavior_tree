@@ -22,7 +22,7 @@ type BResult = BehaviorResult<Vec<String>, ()>;
 
 impl BehaviorNodeBase<&Arm, Vec<String>, ()> for PrintArmNode {
     fn tick(&mut self, arm: &Arm) -> BResult {
-        BehaviorResult::SUCCESS(vec![arm.name.clone()])
+        BehaviorResult::Success(vec![arm.name.clone()])
     }
 }
 
@@ -37,21 +37,21 @@ impl<'a> BehaviorNodeBase<&'a Body, Vec<String>, ()> for BodyArmsNode<'a> {
         let mut join_result = |node: &mut Box<dyn BehaviorNodeBase<&'a Arm, Vec<String>, ()>>,
                                arm: &'a Arm| {
             match node.tick(arm) {
-                BehaviorResult::SUCCESS(mut s) => {
+                BehaviorResult::Success(mut s) => {
                     result.append(&mut s);
                     None
                 }
-                BehaviorResult::FAILURE(f) => return Some(f),
+                BehaviorResult::Failure(f) => return Some(f),
                 _ => None,
             }
         };
         if let Some(f) = join_result(&mut self.left_arm_node, &body.left_arm) {
-            return BehaviorResult::FAILURE(f);
+            return BehaviorResult::Failure(f);
         }
         if let Some(f) = join_result(&mut self.right_arm_node, &body.right_arm) {
-            return BehaviorResult::FAILURE(f);
+            return BehaviorResult::Failure(f);
         }
-        BehaviorResult::SUCCESS(result)
+        BehaviorResult::Success(result)
     }
 }
 
@@ -99,7 +99,7 @@ fn test_arm() -> Result<(), ()> {
     };
     assert_eq!(
         tree.tick(&body),
-        BehaviorResult::SUCCESS(vec!["leftArm".to_owned(), "rightArm".to_owned()])
+        BehaviorResult::Success(vec!["leftArm".to_owned(), "rightArm".to_owned()])
     );
     Ok(())
 }
@@ -126,6 +126,6 @@ fn test_arm_peel() {
     );
     assert_eq!(
         tree.tick(&body),
-        BehaviorResult::SUCCESS(vec!["leftArm".to_owned(), "rightArm".to_owned()])
+        BehaviorResult::Success(vec!["leftArm".to_owned(), "rightArm".to_owned()])
     );
 }
