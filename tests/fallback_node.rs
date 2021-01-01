@@ -10,10 +10,6 @@ struct Door {
 
 type RCDoor<'a> = &'a RefCell<Door>;
 
-struct Agent {
-    has_key: bool,
-}
-
 struct IsDoorOpen;
 
 impl<'a> BehaviorNodeBase<RCDoor<'a>, (), ()> for IsDoorOpen {
