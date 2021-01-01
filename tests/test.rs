@@ -1,4 +1,4 @@
-use rusty_tiny_behavior_tree::{BehaviorNodeBase, BehaviorResult, SequenceNode};
+use rusty_tiny_behavior_tree::{BehaviorNodeBase, BehaviorResult, SequenceNode, peel_node_def};
 use std::convert::From;
 
 struct Arm {
@@ -55,25 +55,8 @@ impl<'a> BehaviorNodeBase<&'a Body, Vec<String>, ()> for BodyArmsNode<'a> {
     }
 }
 
-struct PeelLeftArmNode<T>(T);
-
-impl<'a, T: BehaviorNodeBase<&'a Arm, Vec<String>, ()>> BehaviorNodeBase<&'a Body, Vec<String>, ()>
-    for PeelLeftArmNode<T>
-{
-    fn tick(&mut self, body: &'a Body) -> BResult {
-        self.0.tick(&body.left_arm)
-    }
-}
-
-struct PeelRightArmNode<T>(T);
-
-impl<'a, T: BehaviorNodeBase<&'a Arm, Vec<String>, ()>> BehaviorNodeBase<&'a Body, Vec<String>, ()>
-    for PeelRightArmNode<T>
-{
-    fn tick(&mut self, body: &'a Body) -> BResult {
-        self.0.tick(&body.right_arm)
-    }
-}
+peel_node_def!(PeelLeftArmNode, Body, Arm, Vec<String>, (), |payload: &'a Body| &payload.left_arm);
+peel_node_def!(PeelRightArmNode, Body, Arm, Vec<String>, (), |payload: &'a Body| &payload.right_arm);
 
 fn boxify<'a, 'b, T, State>(t: T) -> Box<dyn BehaviorNodeBase<&'a State, Vec<String>, ()> + 'b>
 where

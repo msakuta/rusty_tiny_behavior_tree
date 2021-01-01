@@ -155,3 +155,18 @@ where
         BehaviorResult::Failure(last_failure)
     }
 }
+
+#[macro_export]
+macro_rules! peel_node_def {
+    ($name:ident, $parent_payload:ty, $payload:ty, $r:ty, $f:ty, $peel:expr) => {
+        struct $name<T>(T);
+
+        impl<'a, T: BehaviorNodeBase<&'a $payload, $r, $f>> BehaviorNodeBase<&'a $parent_payload, $r, $f>
+            for $name<T>
+        {
+            fn tick(&mut self, payload: &'a $parent_payload) -> BehaviorResult<$r, $f> {
+                self.0.tick($peel(payload))
+            }
+        }
+    };
+}
