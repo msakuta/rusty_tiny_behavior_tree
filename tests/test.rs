@@ -55,28 +55,31 @@ impl<'a> BehaviorNodeBase<&'a Body, Vec<String>, ()> for BodyArmsNode<'a> {
     }
 }
 
-struct PeelLeftArmNode<T> {
-    node: T,
-}
+struct PeelLeftArmNode<T>(T);
 
 impl<'a, T: BehaviorNodeBase<&'a Arm, Vec<String>, ()>> BehaviorNodeBase<&'a Body, Vec<String>, ()>
     for PeelLeftArmNode<T>
 {
     fn tick(&mut self, body: &'a Body) -> BResult {
-        self.node.tick(&body.left_arm)
+        self.0.tick(&body.left_arm)
     }
 }
 
-struct PeelRightArmNode<T> {
-    node: T,
-}
+struct PeelRightArmNode<T>(T);
 
 impl<'a, T: BehaviorNodeBase<&'a Arm, Vec<String>, ()>> BehaviorNodeBase<&'a Body, Vec<String>, ()>
     for PeelRightArmNode<T>
 {
     fn tick(&mut self, body: &'a Body) -> BResult {
-        self.node.tick(&body.right_arm)
+        self.0.tick(&body.right_arm)
     }
+}
+
+fn boxify<'a, 'b, T, State>(t: T) -> Box<dyn BehaviorNodeBase<&'a State, Vec<String>, ()> + 'b>
+where
+    T: BehaviorNodeBase<&'a State, Vec<String>, ()> + 'b,
+{
+    Box::new(t)
 }
 
 #[test]
@@ -91,12 +94,8 @@ fn test_arm() -> Result<(), ()> {
     };
 
     let mut tree = BodyArmsNode {
-        left_arm_node: Box::<dyn BehaviorNodeBase<&Arm, Vec<String>, ()>>::from(Box::new(
-            PrintArmNode,
-        )),
-        right_arm_node: Box::<dyn BehaviorNodeBase<&Arm, Vec<String>, ()>>::from(Box::new(
-            PrintArmNode,
-        )),
+        left_arm_node: boxify(PrintArmNode),
+        right_arm_node: boxify(PrintArmNode),
     };
     assert_eq!(
         tree.tick(&body),
@@ -116,20 +115,10 @@ fn test_arm_peel() {
         },
     };
 
-    // fn map_b<'a, T>(node: T) -> Box<dyn BehaviorNodeBase<&'a Body, Vec<String>, ()>>
-    //  where T: BehaviorNodeBase<&'a Body, Vec<String>, ()> + 'static
-    // {
-    //     Box::new(node)
-    // }
-
     let mut tree = SequenceNode::<&Body, Vec<String>, (), _>::new(
-        vec![
-            Box::<dyn BehaviorNodeBase<&Body, Vec<String>, ()>>::from(Box::new(PeelLeftArmNode {
-                node: PrintArmNode,
-            })),
-            Box::<dyn BehaviorNodeBase<&Body, Vec<String>, ()>>::from(Box::new(PeelRightArmNode {
-                node: PrintArmNode,
-            })),
+        [
+            boxify(PeelLeftArmNode(PrintArmNode)),
+            boxify(PeelRightArmNode(PrintArmNode)),
         ],
         |last_success: &mut Vec<String>, mut this_success: Vec<String>| {
             last_success.append(&mut this_success)
