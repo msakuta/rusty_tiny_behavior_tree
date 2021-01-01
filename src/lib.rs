@@ -84,3 +84,41 @@ where
         BehaviorResult::FAILURE(last_failure)
     }
 }
+
+pub struct FallbackNodeMut<'a, Payload, R, F, MR> {
+    children: Vec<Box<dyn BehaviorNodeBase<&'a Payload, R, F>>>,
+    merge_result: MR,
+}
+
+impl<'a, Payload, R, F, MR> FallbackNodeMut<'a, Payload, R, F, MR> {
+    pub fn new<T>(children: T, merge_result: MR) -> Self
+    where
+        T: Into<Vec<Box<dyn BehaviorNodeBase<&'a Payload, R, F>>>>,
+    {
+        Self {
+            children: children.into(),
+            merge_result,
+        }
+    }
+}
+
+impl<'a, 'b, Payload, R, F, MR> BehaviorNodeBase<&'b Payload, R, F>
+    for FallbackNodeMut<'a, Payload, R, F, MR>
+where
+    F: Default,
+    Payload: Clone,
+    MR: Fn(&mut F, F),
+    'b: 'a,
+{
+    fn tick(&mut self, payload: &'b Payload) -> BehaviorResult<R, F> {
+        let mut last_failure = F::default();
+        for node in &mut self.children {
+            match node.tick(payload) {
+                BehaviorResult::SUCCESS(r) => return BehaviorResult::SUCCESS(r),
+                BehaviorResult::FAILURE(f) => (self.merge_result)(&mut last_failure, f),
+                _ => (),
+            }
+        }
+        BehaviorResult::FAILURE(last_failure)
+    }
+}

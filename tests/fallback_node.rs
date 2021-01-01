@@ -1,7 +1,6 @@
 use rusty_tiny_behavior_tree::{BehaviorNodeBase, BehaviorResult, FallbackNode};
 use std::cell::RefCell;
 use std::convert::From;
-use std::rc::Rc;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 struct Door {
@@ -9,14 +8,16 @@ struct Door {
     locked: bool,
 }
 
+type RCDoor<'a> = &'a RefCell<Door>;
+
 struct Agent {
     has_key: bool,
 }
 
 struct IsDoorOpen;
 
-impl BehaviorNodeBase<Rc<RefCell<Door>>, (), ()> for IsDoorOpen {
-    fn tick(&mut self, door: Rc<RefCell<Door>>) -> BehaviorResult<(), ()> {
+impl<'a> BehaviorNodeBase<RCDoor<'a>, (), ()> for IsDoorOpen {
+    fn tick(&mut self, door: RCDoor<'a>) -> BehaviorResult<(), ()> {
         let door = door.borrow_mut();
         eprintln!("The door is {}", if door.open { "open" } else { "closed" });
         if door.open {
@@ -40,8 +41,8 @@ impl BehaviorNodeBase<&mut Door, (), ()> for IsDoorOpen {
 
 struct OpenDoor;
 
-impl BehaviorNodeBase<Rc<RefCell<Door>>, (), ()> for OpenDoor {
-    fn tick(&mut self, door: Rc<RefCell<Door>>) -> BehaviorResult<(), ()> {
+impl<'a> BehaviorNodeBase<RCDoor<'a>, (), ()> for OpenDoor {
+    fn tick(&mut self, door: RCDoor) -> BehaviorResult<(), ()> {
         let mut door = door.borrow_mut();
         if !door.locked {
             door.open = true;
@@ -56,20 +57,20 @@ impl BehaviorNodeBase<Rc<RefCell<Door>>, (), ()> for OpenDoor {
 
 #[test]
 fn test_open_door() {
-    let door = Rc::new(RefCell::new(Door {
+    let door = RefCell::new(Door {
         open: false,
         locked: false,
-    }));
+    });
 
-    let mut tree = FallbackNode::<Rc<RefCell<Door>>, (), (), _>::new(
+    let mut tree = FallbackNode::<RCDoor, (), (), _>::new(
         vec![
-            Box::<dyn BehaviorNodeBase<Rc<RefCell<Door>>, (), ()>>::from(Box::new(IsDoorOpen)),
-            Box::<dyn BehaviorNodeBase<Rc<RefCell<Door>>, (), ()>>::from(Box::new(OpenDoor)),
+            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(IsDoorOpen)),
+            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(OpenDoor)),
         ],
         |_: &mut (), _: ()| (),
     );
 
-    assert_eq!(tree.tick(door.clone()), BehaviorResult::SUCCESS(()));
+    assert_eq!(tree.tick(&door), BehaviorResult::SUCCESS(()));
 
     assert_eq!(
         *door.borrow(),
