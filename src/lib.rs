@@ -19,6 +19,14 @@ pub struct SequenceNode<Payload, R, F> {
     children: Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>,
 }
 
+impl<Payload, R, F> SequenceNode<Payload, R, F> {
+    pub fn new<T>(children: T) -> Self
+        where T: Into<Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>>
+    {
+        Self{ children: children.into() }
+    }
+}
+
 impl<Payload, R, F> BehaviorNodeBase<Payload, R, F> for SequenceNode<Payload, R, F>
     where R: Default, Payload: Copy + Clone
 {
