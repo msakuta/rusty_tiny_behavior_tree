@@ -104,9 +104,9 @@ fn test_arm_peel(){
     //     Box::new(node)
     // }
 
-    let mut tree = SequenceNode::<&Body, Vec<String>, ()>::new(vec![
+    let mut tree = SequenceNode::<&Body, Vec<String>, (), _>::new(vec![
         Box::<dyn BehaviorNodeBase<&Body, Vec<String>, ()>>::from(Box::new(PeelLeftArmNode{ node: PrintArmNode })),
         Box::<dyn BehaviorNodeBase<&Body, Vec<String>, ()>>::from(Box::new(PeelRightArmNode{ node: PrintArmNode }))
-    ]);
+    ], |last_success: &mut Vec<String>, mut this_success: Vec<String>| last_success.append(&mut this_success));
     assert_eq!(tree.tick(&body), BehaviorResult::SUCCESS(vec!["leftArm".to_owned(), "rightArm".to_owned()]));
 }

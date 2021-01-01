@@ -15,26 +15,28 @@ pub trait BehaviorNodeBase<Payload, R, F>{
     }
 }
 
-pub struct SequenceNode<Payload, R, F> {
+pub struct SequenceNode<Payload, R, F, MR> {
     children: Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>,
+    merge_result: MR,
 }
 
-impl<Payload, R, F> SequenceNode<Payload, R, F> {
-    pub fn new<T>(children: T) -> Self
+impl<Payload, R, F, MR> SequenceNode<Payload, R, F, MR> {
+    pub fn new<T>(children: T, merge_result: MR) -> Self
         where T: Into<Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>>
     {
-        Self{ children: children.into() }
+        Self{ children: children.into(), merge_result }
     }
 }
 
-impl<Payload, R, F> BehaviorNodeBase<Payload, R, F> for SequenceNode<Payload, R, F>
-    where R: Default, Payload: Copy + Clone
+impl<Payload, R, F, MR> BehaviorNodeBase<Payload, R, F> for SequenceNode<Payload, R, F, MR>
+    where R: Default, Payload: Copy + Clone,
+        MR: Fn(&mut R, R),
 {
     fn tick(&mut self, payload: Payload) -> BehaviorResult<R, F> {
         let mut last_success = R::default();
         for node in &mut self.children {
             match node.tick(payload) {
-                BehaviorResult::SUCCESS(r) => last_success = r,
+                BehaviorResult::SUCCESS(r) => (self.merge_result)(&mut last_success, r),
                 BehaviorResult::FAILURE(f) => return BehaviorResult::FAILURE(f),
                 _ => (),
             }
