@@ -55,9 +55,12 @@ pub struct FallbackNode<Payload, R, F, MR> {
 }
 
 impl<Payload, R, F, MR> FallbackNode<Payload, R, F, MR> {
-    pub fn new(children: Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>, merge_result: MR) -> Self {
+    pub fn new<T>(children: T, merge_result: MR) -> Self
+    where
+        T: Into<Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>>,
+    {
         Self {
-            children,
+            children: children.into(),
             merge_result,
         }
     }
