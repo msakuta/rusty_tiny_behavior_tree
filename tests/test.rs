@@ -18,25 +18,33 @@ impl<'a> From<&'a Body> for &'a Arm {
 
 struct PrintArmNode;
 
-impl BehaviorNodeBase<(&Arm, &mut Vec<String>)> for PrintArmNode {
-    fn tick(&mut self, (arm, result): &mut (&Arm, &mut Vec<String>)) -> BehaviorResult {
-        // let (arm, result) = payload;
-        result.push(arm.name.clone());
-        BehaviorResult::SUCCESS
+type BResult = BehaviorResult<Vec<String>, ()>;
+
+impl BehaviorNodeBase<&Arm, Vec<String>, ()> for PrintArmNode {
+    fn tick(&mut self, arm: &Arm) -> BResult {
+        BehaviorResult::SUCCESS(vec![arm.name.clone()])
     }
 }
 
 struct PrintBodyNode;
 
-impl BehaviorNodeBase<(&Body, &mut Vec<String>)> for PrintBodyNode {
-    fn tick(&mut self, (body, result): &mut (&Body, &mut Vec<String>)) -> BehaviorResult {
-        if let BehaviorResult::FAILURE = PrintArmNode.tick(&mut (&body.left_arm, *result)) {
-            return BehaviorResult::FAILURE;
+impl BehaviorNodeBase<&Body, Vec<String>, ()> for PrintBodyNode {
+    fn tick(&mut self, body: &Body) -> BResult {
+        let mut result = vec![];
+        let mut join_result = |arm| {
+            match PrintArmNode.tick(arm) {
+                BehaviorResult::SUCCESS(mut s) => {result.append(&mut s); None},
+                BehaviorResult::FAILURE(f) => return Some(f),
+                _ => None,
+            }
+        };
+        if let Some(f) = join_result(&body.left_arm) {
+            return BehaviorResult::FAILURE(f);
         }
-        if let BehaviorResult::FAILURE = PrintArmNode.tick(&mut (&body.right_arm, *result)) {
-            return BehaviorResult::FAILURE;
+        if let Some(f) = join_result(&body.right_arm) {
+            return BehaviorResult::FAILURE(f);
         }
-        BehaviorResult::SUCCESS
+        BehaviorResult::SUCCESS(result)
     }
 }
 
@@ -44,14 +52,11 @@ struct PeelLeftArmNode<T>{
     node: T,
 }
 
-impl<'a, T: BehaviorNodeBase<(&'a Arm, &'a mut Vec<String>)>>
-BehaviorNodeBase<(&'a Body, &'a mut Vec<String>)> for PeelLeftArmNode<T>
+impl<'a, T: BehaviorNodeBase<&'a Arm, Vec<String>, ()>>
+BehaviorNodeBase<&'a Body, Vec<String>, ()> for PeelLeftArmNode<T>
 {
-    fn tick(&mut self, (body, result): &mut (&'a Body, &'a mut Vec<String>)) -> BehaviorResult {
-        if let BehaviorResult::FAILURE = self.node.tick(&mut (&body.left_arm, result)) {
-            return BehaviorResult::FAILURE;
-        }
-        BehaviorResult::SUCCESS
+    fn tick(&mut self, body: &'a Body) -> BResult {
+        self.node.tick(&body.left_arm)
     }
 }
 
@@ -64,8 +69,6 @@ fn test_arm() -> Result<(), ()> {
     };
 
     let mut tree = PrintBodyNode;
-    let mut result = vec![];
-    assert_eq!(tree.tick(&mut (&body, &mut result)), BehaviorResult::SUCCESS);
-    assert_eq!(result, vec!["leftArm", "rightArm"]);
+    assert_eq!(tree.tick(&body), BehaviorResult::SUCCESS(vec!["leftArm".to_owned(), "rightArm".to_owned()]));
     Ok(())
 }

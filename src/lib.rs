@@ -1,47 +1,56 @@
 use std::cmp::PartialEq;
 
 #[derive(PartialEq, Debug)]
-pub enum BehaviorResult {
+pub enum BehaviorResult<R, F> {
     IDLE,
     RUNNING,
-    SUCCESS,
-    FAILURE
+    SUCCESS(R),
+    FAILURE(F),
 }
 
 
-pub trait BehaviorNodeBase<Payload>{
-    fn tick(&mut self, payload: &mut Payload) -> BehaviorResult;
-    fn set_parent(&mut self, parent: &dyn BehaviorNodeBase<Payload>){
+pub trait BehaviorNodeBase<Payload, R, F>{
+    fn tick(&mut self, payload: Payload) -> BehaviorResult<R, F>;
+    fn set_parent(&mut self, parent: &dyn BehaviorNodeBase<Payload, R, F>){
     }
 }
 
-pub struct SequenceNode<Payload> {
-    children: Vec<Box<dyn BehaviorNodeBase<Payload>>>,
+pub struct SequenceNode<Payload, R, F> {
+    children: Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>,
 }
 
-impl<Payload> BehaviorNodeBase<Payload> for SequenceNode<Payload> {
-    fn tick(&mut self, payload: &mut Payload) -> BehaviorResult {
+impl<Payload, R, F> BehaviorNodeBase<Payload, R, F> for SequenceNode<Payload, R, F>
+    where R: Default, Payload: Copy + Clone
+{
+    fn tick(&mut self, payload: Payload) -> BehaviorResult<R, F> {
+        let mut last_success = R::default();
         for node in &mut self.children {
             match node.tick(payload) {
-                BehaviorResult::FAILURE => return BehaviorResult::FAILURE,
+                BehaviorResult::SUCCESS(r) => last_success = r,
+                BehaviorResult::FAILURE(f) => return BehaviorResult::FAILURE(f),
                 _ => (),
             }
         }
-        BehaviorResult::SUCCESS
+        BehaviorResult::SUCCESS(last_success)
     }
 }
 
-pub struct FallbackNode<Payload> {
-    children: Vec<Box<dyn BehaviorNodeBase<Payload>>>,
+pub struct FallbackNode<Payload, R, F> {
+    children: Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>,
 }
 
-impl<Payload> BehaviorNodeBase<Payload> for FallbackNode<Payload> {
-    fn tick(&mut self, payload: &mut Payload) -> BehaviorResult {
+impl<Payload, R, F> BehaviorNodeBase<Payload, R, F> for FallbackNode<Payload, R, F>
+    where F: Default, Payload: Copy + Clone
+{
+    fn tick(&mut self, payload: Payload) -> BehaviorResult<R, F> {
+        let mut last_failure = F::default();
         for node in &mut self.children {
-            if let BehaviorResult::SUCCESS = node.tick(payload) {
-                return BehaviorResult::SUCCESS;
+            match node.tick(payload) {
+                BehaviorResult::SUCCESS(r) => return BehaviorResult::SUCCESS(r),
+                BehaviorResult::FAILURE(f) => last_failure = f,
+                _ => (),
             }
         }
-        BehaviorResult::FAILURE
+        BehaviorResult::FAILURE(last_failure)
     }
 }
