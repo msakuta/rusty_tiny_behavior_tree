@@ -52,6 +52,32 @@ impl<'a> BehaviorNodeBase<RCDoor<'a>, (), ()> for OpenDoor {
 }
 
 #[test]
+fn test_opened_door() {
+    let door = RefCell::new(Door {
+        open: true,
+        locked: false,
+    });
+
+    let mut tree = FallbackNode::<RCDoor, (), (), _>::new(
+        vec![
+            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(IsDoorOpen)),
+            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(OpenDoor)),
+        ],
+        |_: &mut (), _: ()| (),
+    );
+
+    assert_eq!(tree.tick(&door), BehaviorResult::SUCCESS(()));
+
+    assert_eq!(
+        *door.borrow(),
+        Door {
+            open: true,
+            locked: false
+        }
+    );
+}
+
+#[test]
 fn test_open_door() {
     let door = RefCell::new(Door {
         open: false,
@@ -73,6 +99,32 @@ fn test_open_door() {
         Door {
             open: true,
             locked: false
+        }
+    );
+}
+
+#[test]
+fn test_open_door_fail() {
+    let door = RefCell::new(Door {
+        open: false,
+        locked: true,
+    });
+
+    let mut tree = FallbackNode::<RCDoor, (), (), _>::new(
+        vec![
+            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(IsDoorOpen)),
+            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(OpenDoor)),
+        ],
+        |_: &mut (), _: ()| (),
+    );
+
+    assert_eq!(tree.tick(&door), BehaviorResult::FAILURE(()));
+
+    assert_eq!(
+        *door.borrow(),
+        Door {
+            open: false,
+            locked: true
         }
     );
 }
