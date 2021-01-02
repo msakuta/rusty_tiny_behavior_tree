@@ -1,4 +1,4 @@
-use rusty_tiny_behavior_tree::{peel_node_def, BehaviorNodeBase, BehaviorResult, SequenceNode};
+use tiny_behavior_tree::{peel_node_def, BehaviorNodeBase, BehaviorResult, SequenceNode};
 use std::convert::From;
 
 struct Arm {

@@ -1,4 +1,4 @@
-use rusty_tiny_behavior_tree::{BehaviorNodeBase, BehaviorResult, FallbackNode};
+use tiny_behavior_tree::{BehaviorNodeBase, BehaviorResult, FallbackNode};
 use std::cell::RefCell;
 use std::convert::From;
 

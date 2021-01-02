@@ -20,7 +20,7 @@
 //!
 //!
 //! ```rust
-//! # use rusty_tiny_behavior_tree::*;
+//! # use tiny_behavior_tree::*;
 //! // First, you define the state with a data structure.
 //! struct Arm {
 //!     name: String,
@@ -97,7 +97,7 @@
 //! Unlike C++, Rust doesn't have variadic templates, so you need to stuff the arguments into a tuple if you want to pass multiple arguments.
 //!
 //! ```rust
-//! # use rusty_tiny_behavior_tree::*;
+//! # use tiny_behavior_tree::*;
 //! # struct Arm {
 //! #     name: String,
 //! # }
@@ -148,7 +148,7 @@
 //! We can define the node to process an arm:
 //!
 //! ```rust
-//! # use rusty_tiny_behavior_tree::*;
+//! # use tiny_behavior_tree::*;
 //! # struct Arm {
 //! #     name: String,
 //! # }
@@ -173,7 +173,7 @@
 //! There is a macro [`peel_node_def`](crate::peel_node_def) to simplify this process.
 //!
 //! ```
-//! # use rusty_tiny_behavior_tree::*;
+//! # use tiny_behavior_tree::*;
 //! # struct Arm {
 //! #     name: String,
 //! # }
@@ -519,7 +519,7 @@ where
 /// # Example
 /// ```
 /// # #[macro_use]
-/// # use rusty_tiny_behavior_tree::peel_node_def;
+/// # use tiny_behavior_tree::peel_node_def;
 /// struct Arm {
 ///     name: String,
 /// }
@@ -554,13 +554,13 @@ macro_rules! peel_node_def {
     ($name:ident, $parent_payload:ty, $payload:ty, $r:ty, $f:ty, $peel:expr) => {
         struct $name<T>(T);
 
-        impl<'a, T: rusty_tiny_behavior_tree::BehaviorNodeBase<&'a $payload, $r, $f>>
-            rusty_tiny_behavior_tree::BehaviorNodeBase<&'a $parent_payload, $r, $f> for $name<T>
+        impl<'a, T: tiny_behavior_tree::BehaviorNodeBase<&'a $payload, $r, $f>>
+            tiny_behavior_tree::BehaviorNodeBase<&'a $parent_payload, $r, $f> for $name<T>
         {
             fn tick(
                 &mut self,
                 payload: &'a $parent_payload,
-            ) -> rusty_tiny_behavior_tree::BehaviorResult<$r, $f> {
+            ) -> tiny_behavior_tree::BehaviorResult<$r, $f> {
                 self.0.tick($peel(payload))
             }
         }

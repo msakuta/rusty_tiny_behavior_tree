@@ -1,4 +1,4 @@
-use rusty_tiny_behavior_tree::{
+use tiny_behavior_tree::{
     BehaviorNodeBase, BehaviorResult, FallbackNodeRef, SequenceNodeRef,
 };
 use std::cell::RefCell;

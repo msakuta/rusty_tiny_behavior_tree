@@ -1,4 +1,4 @@
-# rusty_tiny_behavior_tree
+# tiny_behavior_tree (Rust crate)
 An experimental Rust crate to support behavior tree in minimal footprint
 
 
