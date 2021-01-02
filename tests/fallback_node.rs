@@ -1,6 +1,6 @@
-use tiny_behavior_tree::{BehaviorNodeBase, BehaviorResult, FallbackNode};
 use std::cell::RefCell;
 use std::convert::From;
+use tiny_behavior_tree::{BehaviorNodeBase, BehaviorResult, FallbackNode};
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 struct Door {

@@ -1,7 +1,7 @@
-use tiny_behavior_tree::{
-    BehaviorNodeBase, BehaviorResult, FallbackNodeRef, SequenceNodeRef,
-};
 use std::cell::RefCell;
+use tiny_behavior_tree::{
+    peel_node_def, BehaviorNodeBase, BehaviorResult, FallbackNodeRef, SequenceNodeRef,
+};
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 struct Door {
@@ -23,25 +23,23 @@ struct State {
     agent: RefCell<Agent>,
 }
 
-struct PeelAgentNode<T>(T);
+peel_node_def!(
+    PeelAgentNode,
+    State,
+    RefCell<Agent>,
+    (),
+    (),
+    |payload: &'a State| &payload.agent
+);
 
-impl<'a, T: BehaviorNodeBase<RCAgent<'a>, (), ()>> BehaviorNodeBase<&'a State, (), ()>
-    for PeelAgentNode<T>
-{
-    fn tick(&mut self, body: &'a State) -> BehaviorResult<(), ()> {
-        self.0.tick(&body.agent)
-    }
-}
-
-struct PeelDoorNode<T>(T);
-
-impl<'a, T: BehaviorNodeBase<RCDoor<'a>, (), ()>> BehaviorNodeBase<&'a State, (), ()>
-    for PeelDoorNode<T>
-{
-    fn tick(&mut self, body: &'a State) -> BehaviorResult<(), ()> {
-        self.0.tick(&body.door)
-    }
-}
+peel_node_def!(
+    PeelDoorNode,
+    State,
+    RefCell<Door>,
+    (),
+    (),
+    |payload: &'a State| &payload.door
+);
 
 struct IsDoorOpen;
 
