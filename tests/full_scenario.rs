@@ -119,23 +119,17 @@ where
         Box::new(t)
     }
 
-    let seqtree = SequenceNodeRef::<State, (), (), _>::new(
-        [
-            boxify(PeelAgentNode(HaveKey)),
-            boxify(PeelDoorNode(UnlockDoor)),
-            boxify(PeelDoorNode(OpenDoor)),
-        ],
-        |_: &mut (), _: ()| (),
-    );
+    let seqtree = SequenceNodeRef::<State, (), (), _>::new([
+        boxify(PeelAgentNode(HaveKey)),
+        boxify(PeelDoorNode(UnlockDoor)),
+        boxify(PeelDoorNode(OpenDoor)),
+    ]);
 
-    let tree = FallbackNodeRef::<State, (), (), _>::new(
-        [
-            boxify(PeelDoorNode(IsDoorOpen)),
-            boxify(PeelDoorNode(OpenDoor)),
-            boxify(seqtree),
-        ],
-        |_: &mut (), _: ()| (),
-    );
+    let tree = FallbackNodeRef::<State, (), (), _>::new([
+        boxify(PeelDoorNode(IsDoorOpen)),
+        boxify(PeelDoorNode(OpenDoor)),
+        boxify(seqtree),
+    ]);
     Box::new(tree)
 }
 

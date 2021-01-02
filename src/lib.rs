@@ -77,7 +77,6 @@
 //!         boxify(PeelLeftArmNode(PrintArmNode)),
 //!         boxify(PeelRightArmNode(PrintArmNode)),
 //!     ],
-//!     |_: &mut (), _: ()| (),
 //! );
 //!
 //! // Finally, call `tree.tick()`
@@ -232,18 +231,34 @@ pub trait BehaviorNodeBase<Payload, R, F> {
 /// ```
 pub struct SequenceNode<Payload, R, F, MR> {
     children: Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>,
-    merge_result: MR,
+    merge_result: Option<MR>,
 }
 
-impl<Payload, R, F, MR> SequenceNode<Payload, R, F, MR> {
-    /// Constructs a [SequenceNode] with children nodes and a merger funtion.
-    pub fn new<T>(children: T, merge_result: MR) -> Self
+impl<Payload, R, F> SequenceNode<Payload, R, F, &dyn Fn(&mut R, R)> {
+    /// Constructs a [SequenceNode] with children nodes.
+    ///
+    /// If multiple child nodes return results in `R`, this node will return
+    /// the last one.
+    pub fn new<T>(children: T) -> Self
     where
         T: Into<Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>>,
     {
         Self {
             children: children.into(),
-            merge_result,
+            merge_result: None,
+        }
+    }
+}
+
+impl<Payload, R, F, MR> SequenceNode<Payload, R, F, MR> {
+    /// Constructs a [SequenceNode] with children nodes and a merger funtion.
+    pub fn new_with_merger<T>(children: T, merge_result: MR) -> Self
+    where
+        T: Into<Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>>,
+    {
+        Self {
+            children: children.into(),
+            merge_result: Some(merge_result),
         }
     }
 }
@@ -258,7 +273,13 @@ where
         let mut last_success = R::default();
         for node in &mut self.children {
             match node.tick(payload.clone()) {
-                BehaviorResult::Success(r) => (self.merge_result)(&mut last_success, r),
+                BehaviorResult::Success(r) => {
+                    if let Some(ref merge_result) = self.merge_result {
+                        merge_result(&mut last_success, r)
+                    } else {
+                        last_success = r
+                    }
+                }
                 BehaviorResult::Failure(f) => return BehaviorResult::Failure(f),
                 _ => (),
             }
@@ -281,18 +302,34 @@ where
 /// If you want to do so, use [RefCell] as `Payload`.
 pub struct SequenceNodeRef<'a, Payload, R, F, MR> {
     children: Vec<Box<dyn BehaviorNodeBase<&'a Payload, R, F> + 'a>>,
-    merge_result: MR,
+    merge_result: Option<MR>,
 }
 
-impl<'a, Payload, R, F, MR> SequenceNodeRef<'a, Payload, R, F, MR> {
-    /// Constructs a [SequenceNodeRef] with children nodes and merger funtion.
-    pub fn new<T>(children: T, merge_result: MR) -> Self
+impl<'a, Payload, R, F> SequenceNodeRef<'a, Payload, R, F, &dyn Fn(&mut R, R)> {
+    /// Constructs a [SequenceNodeRef] with children nodes.
+    ///
+    /// If multiple child nodes return results in `R`, this node will return
+    /// the last one.
+    pub fn new<T>(children: T) -> Self
     where
         T: Into<Vec<Box<dyn BehaviorNodeBase<&'a Payload, R, F> + 'a>>>,
     {
         Self {
             children: children.into(),
-            merge_result,
+            merge_result: None,
+        }
+    }
+}
+
+impl<'a, Payload, R, F, MR> SequenceNodeRef<'a, Payload, R, F, MR> {
+    /// Constructs a [SequenceNodeRef] with children nodes and merger funtion.
+    pub fn new_with_merger<T>(children: T, merge_result: MR) -> Self
+    where
+        T: Into<Vec<Box<dyn BehaviorNodeBase<&'a Payload, R, F> + 'a>>>,
+    {
+        Self {
+            children: children.into(),
+            merge_result: Some(merge_result),
         }
     }
 }
@@ -307,7 +344,13 @@ where
         let mut last_success = R::default();
         for node in &mut self.children {
             match node.tick(payload) {
-                BehaviorResult::Success(r) => (self.merge_result)(&mut last_success, r),
+                BehaviorResult::Success(r) => {
+                    if let Some(ref merge_result) = self.merge_result {
+                        merge_result(&mut last_success, r)
+                    } else {
+                        last_success = r
+                    }
+                }
                 BehaviorResult::Failure(f) => return BehaviorResult::Failure(f),
                 _ => (),
             }
@@ -344,18 +387,34 @@ where
 /// ```
 pub struct FallbackNode<Payload, R, F, MR> {
     children: Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>,
-    merge_result: MR,
+    merge_result: Option<MR>,
 }
 
-impl<Payload, R, F, MR> FallbackNode<Payload, R, F, MR> {
-    /// Constructs a [FallbackNode] with children nodes and a merger funtion.
-    pub fn new<T>(children: T, merge_result: MR) -> Self
+impl<Payload, R, F> FallbackNode<Payload, R, F, &dyn Fn(&mut F, F)> {
+    /// Constructs a [FallbackNode] with children nodes.
+    ///
+    /// If multiple child nodes return results in `R`, this node will return
+    /// the last one.
+    pub fn new<T>(children: T) -> Self
     where
         T: Into<Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>>,
     {
         Self {
             children: children.into(),
-            merge_result,
+            merge_result: None,
+        }
+    }
+}
+
+impl<Payload, R, F, MR> FallbackNode<Payload, R, F, MR> {
+    /// Constructs a [FallbackNode] with children nodes and a merger funtion.
+    pub fn new_with_merger<T>(children: T, merge_result: MR) -> Self
+    where
+        T: Into<Vec<Box<dyn BehaviorNodeBase<Payload, R, F>>>>,
+    {
+        Self {
+            children: children.into(),
+            merge_result: Some(merge_result),
         }
     }
 }
@@ -371,7 +430,13 @@ where
         for node in &mut self.children {
             match node.tick(payload.clone()) {
                 BehaviorResult::Success(r) => return BehaviorResult::Success(r),
-                BehaviorResult::Failure(f) => (self.merge_result)(&mut last_failure, f),
+                BehaviorResult::Failure(f) => {
+                    if let Some(ref merge_result) = self.merge_result {
+                        merge_result(&mut last_failure, f)
+                    } else {
+                        last_failure = f
+                    }
+                }
                 _ => (),
             }
         }
@@ -393,18 +458,33 @@ where
 /// If you want to do so, use [RefCell] as `Payload`.
 pub struct FallbackNodeRef<'a, Payload, R, F, MR> {
     children: Vec<Box<dyn BehaviorNodeBase<&'a Payload, R, F> + 'a>>,
-    merge_result: MR,
+    merge_result: Option<MR>,
 }
 
-impl<'a, Payload, R, F, MR> FallbackNodeRef<'a, Payload, R, F, MR> {
-    /// Constructs a [SequenceNodeRef] with children nodes and merger funtion.
-    pub fn new<T>(children: T, merge_result: MR) -> Self
+impl<'a, Payload, R, F> FallbackNodeRef<'a, Payload, R, F, &dyn Fn(&mut F, F)> {
+    /// Constructs a [FallbackNodeRef] with children nodes.
+    ///
+    /// If multiple child nodes return results in `f`, this node will return the last one.
+    pub fn new<T>(children: T) -> Self
     where
         T: Into<Vec<Box<dyn BehaviorNodeBase<&'a Payload, R, F> + 'a>>>,
     {
         Self {
             children: children.into(),
-            merge_result,
+            merge_result: None,
+        }
+    }
+}
+
+impl<'a, Payload, R, F, MR> FallbackNodeRef<'a, Payload, R, F, MR> {
+    /// Constructs a [FallbackNodeRef] with children nodes and a merger funtion.
+    pub fn new_with_merger<T>(children: T, merge_result: MR) -> Self
+    where
+        T: Into<Vec<Box<dyn BehaviorNodeBase<&'a Payload, R, F> + 'a>>>,
+    {
+        Self {
+            children: children.into(),
+            merge_result: Some(merge_result),
         }
     }
 }
@@ -420,7 +500,13 @@ where
         for node in &mut self.children {
             match node.tick(payload) {
                 BehaviorResult::Success(r) => return BehaviorResult::Success(r),
-                BehaviorResult::Failure(f) => (self.merge_result)(&mut last_failure, f),
+                BehaviorResult::Failure(f) => {
+                    if let Some(ref merge_result) = self.merge_result {
+                        merge_result(&mut last_failure, f)
+                    } else {
+                        last_failure = f
+                    }
+                }
                 _ => (),
             }
         }

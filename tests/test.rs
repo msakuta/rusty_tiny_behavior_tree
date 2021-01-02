@@ -112,7 +112,7 @@ fn test_arm_peel() {
         },
     };
 
-    let mut tree = SequenceNode::<&Body, Vec<String>, (), _>::new(
+    let mut tree = SequenceNode::<&Body, Vec<String>, (), _>::new_with_merger(
         [
             boxify(PeelLeftArmNode(PrintArmNode)),
             boxify(PeelRightArmNode(PrintArmNode)),

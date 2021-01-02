@@ -58,13 +58,10 @@ fn test_opened_door() {
         locked: false,
     });
 
-    let mut tree = FallbackNode::<RCDoor, (), (), _>::new(
-        vec![
-            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(IsDoorOpen)),
-            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(OpenDoor)),
-        ],
-        |_: &mut (), _: ()| (),
-    );
+    let mut tree = FallbackNode::<RCDoor, (), (), _>::new([
+        Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(IsDoorOpen)),
+        Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(OpenDoor)),
+    ]);
 
     assert_eq!(tree.tick(&door), BehaviorResult::Success(()));
 
@@ -84,13 +81,10 @@ fn test_open_door() {
         locked: false,
     });
 
-    let mut tree = FallbackNode::<RCDoor, (), (), _>::new(
-        vec![
-            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(IsDoorOpen)),
-            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(OpenDoor)),
-        ],
-        |_: &mut (), _: ()| (),
-    );
+    let mut tree = FallbackNode::<RCDoor, (), (), _>::new([
+        Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(IsDoorOpen)),
+        Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(OpenDoor)),
+    ]);
 
     assert_eq!(tree.tick(&door), BehaviorResult::Success(()));
 
@@ -110,13 +104,10 @@ fn test_open_door_fail() {
         locked: true,
     });
 
-    let mut tree = FallbackNode::<RCDoor, (), (), _>::new(
-        vec![
-            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(IsDoorOpen)),
-            Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(OpenDoor)),
-        ],
-        |_: &mut (), _: ()| (),
-    );
+    let mut tree = FallbackNode::<RCDoor, (), (), _>::new([
+        Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(IsDoorOpen)),
+        Box::<dyn BehaviorNodeBase<RCDoor, (), ()>>::from(Box::new(OpenDoor)),
+    ]);
 
     assert_eq!(tree.tick(&door), BehaviorResult::Failure(()));
 
